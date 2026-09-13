@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, ReactNode } from "react";
 interface InputFieldProps
     extends InputHTMLAttributes<HTMLInputElement> {
     label: string;
-    icon: ReactNode;
+    icon?: ReactNode;
 }
 
 export default function InputField({
@@ -15,20 +15,23 @@ export default function InputField({
         <div>
             <label
                 htmlFor={props.name}
-                className="mb-2 block text-sm font-medium text-[#404040]"
+                className="mb-2 block text-sm font-medium text-gray-700"
             >
                 {label}
             </label>
 
             <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#999]">
-                    {icon}
-                </div>
+                {icon && (
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        {icon}
+                    </div>
+                )}
 
                 <input
                     id={props.name}
                     {...props}
-                    className="h-12 w-full rounded-xl border border-[#dedede] bg-white pl-11 pr-4 text-sm outline-none transition placeholder:text-[#aaa] hover:border-[#c8c8c8] focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                    className={`h-11 w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-900 outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 ${icon ? "pl-10" : "px-3.5"
+                        }`}
                 />
             </div>
         </div>
