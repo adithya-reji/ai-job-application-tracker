@@ -17,5 +17,44 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+    container_name: ${PROJECT_NAME:-app}_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Dynamically inject the exact credentials used to build the DB container
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgrespassword}@db:5432/${POSTGRES_DB:-appdb}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy # Waits for the DB healthcheck before starting FastAPI
+    volumes:
+      # Mount local backend code for hot-reloading
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ${PROJECT_NAME:-app}_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      # Tells the Vite app where to send API requests
+      - VITE_API_URL=http://localhost:8000
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    volumes:
+      # Mount local frontend code for hot-reloading
+      - ./frontend:/app
+      # Prevent local node_modules from overriding the container's installed modules
+      - /app/node_modules
+
 volumes:
   pgdata:

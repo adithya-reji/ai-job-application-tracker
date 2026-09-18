@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Mail } from "lucide-react";
-
 import InputField from "../ui/InputField";
 import PasswordField from "./PasswordField";
+import api from '../../services/api';
 
 type AuthMode = "login" | "signup";
 
@@ -10,11 +11,12 @@ export default function AuthPage() {
     const [mode, setMode] = useState<AuthMode>("login");
 
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] =
-        useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         email: "",
@@ -51,27 +53,42 @@ export default function AuthPage() {
         setIsLoading(true);
 
         try {
-            /*
-             * Connect your FastAPI endpoints here.
-             *
-             * Login:
-             * POST /login
-             *
-             * Signup:
-             * POST /signup
-             */
+            if (isLogin) {
+                const formDataToSend = new URLSearchParams();
 
-            await new Promise((resolve) =>
-                setTimeout(resolve, 1000)
-            );
+                formDataToSend.append("username", formData.email);
+                formDataToSend.append("password", formData.password);
 
-            console.log({
-                mode,
-                email: formData.email,
-                password: formData.password,
-            });
-        } catch {
-            setError("Something went wrong. Please try again.");
+                const response = await api.post(
+                    "/auth/login",
+                    formDataToSend,
+                    {
+                        headers: {
+                            "Content-Type": 'application/x-www-form-urlencoded',
+                        },
+                    }
+                );
+
+                const { access_token } = response.data;
+
+                localStorage.setItem("token", access_token);
+                navigate("/dashboard")
+            } else {
+                await api.post("auth/register", {
+                    email: formData.email,
+                    password: formData.password
+                });
+
+                switchMode("login")
+            }
+        } catch (error: any) {
+            if (error.response?.status === 409) {
+                setError("An account with this email already exists.");
+            } else if (error.response?.status === 401) {
+                setError("Incorrect email or password.");
+            } else {
+                setError("Something went wrong. Please try again.");
+            }
         } finally {
             setIsLoading(false);
         }

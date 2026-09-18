@@ -1,10 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
-import AddJob from "./pages/AddJob";
-import VerifyJob from "./pages/VerifyJob";
-import EditJob from "./pages/EditJob";
-import JobDetails from "./pages/JobDetails";
+import JobEdit from "./pages/JobEdit";
+import JobView from "./pages/JobView";
 
 function App() {
   return (
@@ -13,8 +12,8 @@ function App() {
         {/* Auth */}
 
         <Route
-          path="/login"
-          element={<Login />}
+          path="/auth"
+          element={<Auth />}
         />
 
         {/* Dashboard */}
@@ -27,24 +26,21 @@ function App() {
         {/* Jobs */}
 
         <Route
-          path="/jobs/add"
-          element={<AddJob />}
-        />
-
-        <Route
           path="/jobs/:id"
-          element={<JobDetails />}
-        />
-
-        <Route
-          path="/jobs/:id/verify"
-          element={<VerifyJob />}
+          element={<JobView />}
         />
 
         <Route
           path="/jobs/:id/edit"
-          element={<EditJob />}
+          element={<JobEdit />}
         />
+
+        {/* Profile */}
+        <Route
+          path="/profile"
+          element={<Profile />}
+        />
+
 
         {/* Fallback */}
 
