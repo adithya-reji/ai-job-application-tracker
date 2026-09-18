@@ -73,6 +73,7 @@ ai-application-tracker/
 │   ├── vite.config.ts
 │   └── Dockerfile
 │
+├── .env.example              # Environment variable template
 ├── compose.yaml              # Docker Compose configuration
 └── README.md
 ```
@@ -85,6 +86,70 @@ Make sure the following are installed:
 * Git
 * A Google Gemini API key
 
+## Environment Configuration
+
+The project uses environment variables for database credentials, application security, and AI API configuration.
+
+A `.env.example` file is included in the repository as a template.
+
+### 1. Create the environment file
+
+Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+### 2. Configure `.env`
+
+Update the values in `.env` with your local configuration:
+
+```env
+PROJECT_NAME=ai-job-application-tracker
+
+# Database Credentials
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_database_password_here
+POSTGRES_DB=jat_db
+
+# PostgreSQL host port
+DB_PORT=5433
+
+# Database connection used by the backend container
+DATABASE_URL=postgresql+psycopg://postgres:your_database_password_here@db:5432/jat_db
+
+# Security
+SECRET_KEY=your_jwt_secret_key_here
+
+# AI Integration
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+Replace the placeholder values with your actual database password, JWT secret key, and Gemini API key.
+
+For a secure `SECRET_KEY`, you can generate one with:
+
+```bash
+openssl rand -hex 32
+```
+
+### Database Connection
+
+PostgreSQL runs as a separate Docker service named `db`.
+
+The database is exposed on port `5433` on the host machine and listens on port `5432` inside the Docker network.
+
+```text
+Host machine                  Docker network
+
+localhost:5433  ───────────►  db:5432
+                              PostgreSQL
+```
+
+The backend connects to PostgreSQL using `db:5432` when running inside Docker. The `DB_PORT` value controls the port exposed to the host and is not used in the backend's `DATABASE_URL`.
+
+> **Important:** Do not commit your `.env` file or API keys to the repository. The `.env.example` file contains placeholder values only and can be committed safely.
+
 ## Getting Started
 
 ### 1. Clone the repository
@@ -96,25 +161,7 @@ cd ai-application-tracker
 
 ### 2. Configure environment variables
 
-Create a `.env` file in the project root:
-
-```env
-# Database
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=adminpassword
-POSTGRES_DB=job_tracker
-DB_PORT=5432
-
-# Backend
-GEMINI_API_KEY=your_google_gemini_api_key
-SECRET_KEY=your_jwt_secret_key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
-
-Replace the placeholder values with your own credentials.
-
-> **Note:** Do not commit your `.env` file or API keys to the repository.
+Copy `.env.example` to `.env` and update the required values as described in the [Environment Configuration](#environment-configuration) section.
 
 ### 3. Start the application
 
@@ -152,25 +199,31 @@ Additional endpoints are available through the Swagger documentation at `/docs`.
 
 ## Application Flow
 
-The main workflow is:
+The main workflow consists of extracting job information, storing the application data, and comparing job requirements with the user's profile.
 
 ```text
-Job Description
-       │
-       ▼
- Gemini API
-       │
-       ▼
+Raw Job Description
+        │
+        ▼
+   Gemini API
+        │
+        ▼
 Structured Job Data
-       │
-       ▼
-PostgreSQL
-       │
-       ▼
-User Profile ──────► Job Requirement Comparison
-                           │
-                           ▼
-                    Match / Skill Gaps
+        │
+        ▼
+   PostgreSQL
+        │
+        ├──────────────┐
+        │              │
+        ▼              ▼
+ Job Requirements   User Profile
+        │              │
+        └──────┬───────┘
+               ▼
+      Profile Comparison
+               │
+               ▼
+        Skill Gaps / Match
 ```
 
 ## Architecture
@@ -182,20 +235,25 @@ The application is organized into separate frontend, backend, and database servi
 │      React UI       │
 │   TypeScript/Vite   │
 └──────────┬──────────┘
+           │
            │ HTTP / REST
            ▼
 ┌─────────────────────┐
 │      FastAPI        │
 │                     │
-│ API Routes          │
-│ Business Logic      │
-│ Authentication      │
-│ AI Integration      │
+│   API Routes        │
+│   Business Logic    │
+│   Authentication    │
+│   AI Integration    │
 └───────┬───────┬─────┘
         │       │
+        │       │ API Requests
         │       ▼
-        │   Gemini API
+        │   ┌──────────────┐
+        │   │  Gemini API  │
+        │   └──────────────┘
         │
+        │ db:5432
         ▼
 ┌─────────────────────┐
 │     PostgreSQL      │
@@ -205,9 +263,9 @@ The application is organized into separate frontend, backend, and database servi
 
 ## Development Notes
 
-The project is designed to run locally using Docker Compose. The frontend and backend are separated into their own services, while PostgreSQL provides persistent application data storage.
+The project is designed to run locally using Docker Compose. The frontend, backend, and PostgreSQL database run as separate services.
 
-The backend uses FastAPI for REST API development, SQLAlchemy for database interaction, and Pydantic for request and response validation. Gemini is used for extracting structured information from job descriptions and generating profile-to-job comparisons.
+The backend uses FastAPI for REST API development, SQLAlchemy for database interaction, and Pydantic for request and response validation. Gemini is used for extracting structured information from job descriptions and performing profile-to-job comparisons.
 
 ## Future Improvements
 
